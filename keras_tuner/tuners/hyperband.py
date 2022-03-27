@@ -102,6 +102,7 @@ class HyperbandOracle(oracle_module.Oracle):
         hyperparameters=None,
         allow_new_entries=True,
         tune_new_entries=True,
+        max_hp_choices=None,
     ):
         super(HyperbandOracle, self).__init__(
             objective=objective,
@@ -119,6 +120,7 @@ class HyperbandOracle(oracle_module.Oracle):
         # degress of aggressiveness.
         self.min_epochs = 1
         self.factor = factor
+        self.max_hp_choices = max_hp_choices
 
         self.seed = seed or random.randint(1, 10000)
         self._max_collisions = 20
@@ -251,9 +253,12 @@ class HyperbandOracle(oracle_module.Oracle):
 
     def _get_size(self, bracket_num, round_num):
         # Set up so that each bracket takes approx. the same amount of resources.
-        bracket0_end_size = math.ceil(1 + math.log(self.max_epochs, self.factor))
-        bracket_end_size = bracket0_end_size / (bracket_num + 1)
-        return math.ceil(bracket_end_size * self.factor ** (bracket_num - round_num))
+        if self.max_hp_choices is None:
+            bracket0_end_size = math.ceil(1 + math.log(self.max_epochs, self.factor))
+            bracket_end_size = bracket0_end_size / (bracket_num + 1)
+            return math.ceil(bracket_end_size * self.factor ** (bracket_num - round_num))
+        else:
+            return math.ceil(self.max_hp_choices/(round_num+1))
 
     def _get_epochs(self, bracket_num, round_num):
         return math.ceil(self.max_epochs / self.factor ** (bracket_num - round_num))
@@ -360,6 +365,7 @@ class Hyperband(tuner_module.Tuner):
         hyperparameters=None,
         tune_new_entries=True,
         allow_new_entries=True,
+        max_hp_choices=None,
         **kwargs
     ):
         oracle = HyperbandOracle(
@@ -371,6 +377,7 @@ class Hyperband(tuner_module.Tuner):
             hyperparameters=hyperparameters,
             tune_new_entries=tune_new_entries,
             allow_new_entries=allow_new_entries,
+            max_hp_choices=max_hp_choices,
         )
         super(Hyperband, self).__init__(
             oracle=oracle, hypermodel=hypermodel, **kwargs
