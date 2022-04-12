@@ -17,6 +17,7 @@
 import hashlib
 import random
 import time
+import json
 
 import tensorflow as tf
 
@@ -89,7 +90,7 @@ class Trial(stateful.Stateful):
     @classmethod
     def load(cls, fname):
         with tf.io.gfile.GFile(fname, "r") as f:
-            state_data = f.read()
+            state_data = json.loads(f.read())
         return cls.from_state(state_data)
 
     def to_proto(self):
